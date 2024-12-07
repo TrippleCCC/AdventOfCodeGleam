@@ -58,11 +58,11 @@ fn is_nice_string_helper(
 pub fn pt_2(input: String) {
   input
   |> string.split("\n")
-  |> list.map(is_nice_string_2)
-  |> list.count(function.identity)
+  |> list.filter(is_nice_string_2)
+  |> list.length
 }
 
-fn is_nice_string_2(str: String) {
+fn is_nice_string_2(str: String) -> Bool {
   is_nice_string_helper_2(
     State2(False, False, set.new()),
     #("", ""),
@@ -75,30 +75,28 @@ fn is_nice_string_helper_2(
   last_2_chars: #(String, String),
   remaining: List(String),
 ) {
-  case state, remaining {
-    State2(True, True, _), _ -> True
+  case state, last_2_chars, remaining {
+    State2(True, True, _), _, _ -> True
 
-    state, [first, ..rest] -> {
-      let state = case last_2_chars.0, last_2_chars.1, first {
-        a, b, c if b != a && b == c -> {
-          let seen = state.pairs |> set.contains(b <> c)
+    state, #(first_char, second_char), [next, ..rest] -> {
+      let state = case first_char <> second_char, second_char <> next {
+        a, b if a != b ->
           State2(
             ..state,
-            two_pairs: seen,
-            pairs: set.insert(state.pairs, b <> c),
+            two_pairs: state.pairs |> set.contains(b),
+            pairs: state.pairs |> set.insert(b),
           )
-        }
-        _, _, _ -> state
+        _, _ -> state
       }
 
-      let state = case last_2_chars.0, last_2_chars.1, first {
-        a, _, b if a == b -> State2(..state, between: True)
-        _, _, _ -> state
+      let state = case first_char, next {
+        a, b if a == b -> State2(..state, between: True)
+        _, _ -> state
       }
 
-      is_nice_string_helper_2(state, #(last_2_chars.1, first), rest)
+      is_nice_string_helper_2(state, #(last_2_chars.1, next), rest)
     }
-    s, [] -> {
+    s, _, [] -> {
       s.between && s.two_pairs
     }
   }
